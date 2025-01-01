@@ -554,6 +554,8 @@ class SolaXModbusHub:
         return resp
 
     async def async_lowlevel_write_register(self, unit, address, payload):
+        _LOGGER.debug(f"writing lowlevel register {address} value {payload}")
+
         kwargs = {"slave": unit} if unit else {}
         # builder = BinaryPayloadBuilder(byteorder=Endian.BIG, wordorder=Endian.BIG)
         builder = BinaryPayloadBuilder(byteorder=self.plugin.order16, wordorder=self.plugin.order32)

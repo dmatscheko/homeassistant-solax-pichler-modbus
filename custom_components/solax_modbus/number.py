@@ -162,22 +162,39 @@ class SolaXModbusNumber(NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Change the number value."""
+        if value is None:
+            _LOGGER.error("Invalid value: %s", value)
+            return
+
+        write_scale = 1
+        if self._attr_scale is not None:
+            write_scale = self._attr_scale
+
         payload = value
+
+        _LOGGER.warning(f"writing {self._platform_name} {self._key} number register {self._register} value {payload} scaled by write scale {write_scale}")
+
+        # Check if write_scale is callable, apply as function if true; else divide by write_scale
+        def apply_scale(value, scale):
+            if callable(scale):
+                return scale(value, None, None)
+            return value / scale
+        
         if self._fmt == "i":
-            payload = int(value / (self._attr_scale * self.entity_description.read_scale))
+            payload = int(apply_scale(value, write_scale))
+            self._hub.data[self._key] = int(value)
         elif self._fmt == "f":
-            payload = int(value / (self._attr_scale * self.entity_description.read_scale))
+            payload = int(apply_scale(value, write_scale))
+            self._hub.data[self._key] = float(value)
+        else:
+            self._hub.data[self._key] = value
         if self._write_method == WRITE_MULTISINGLE_MODBUS:
-            _LOGGER.info(
-                f"writing {self._platform_name} {self._key} number register {self._register} value {payload} after div by readscale {self.entity_description.read_scale} scale {self._attr_scale}"
-            )
+            _LOGGER.info(f"writing {self._platform_name} {self._key} number register {self._register} value {payload} after div by write scale {write_scale} scale {self._attr_scale}")
             await self._hub.async_write_registers_single(
                 unit=self._modbus_addr, address=self._register, payload=payload
             )
         elif self._write_method == WRITE_SINGLE_MODBUS:
-            _LOGGER.info(
-                f"writing {self._platform_name} {self._key} number register {self._register} value {payload} after div by readscale {self.entity_description.read_scale} scale {self._attr_scale}"
-            )
+            _LOGGER.info(f"writing {self._platform_name} {self._key} number register {self._register} value {payload} after div by write scale {write_scale} scale {self._attr_scale}")
             await self._hub.async_write_register(unit=self._modbus_addr, address=self._register, payload=payload)
         elif self._write_method == WRITE_DATA_LOCAL:
             _LOGGER.info(f"*** local data written {self._key}: {payload}")
@@ -189,6 +206,5 @@ class SolaXModbusNumber(NumberEntity):
                 self._hub.tmpdata_expiry[self.entity_description.key] = time() + TMPDATA_EXPIRY
                 # corresponding_sensor.async_write_ha_state()
             self._hub.localsUpdated = True  # mark to save permanently
-        self._hub.data[self._key] = value / self.entity_description.read_scale
         # _LOGGER.info(f"*** data written part 2 {self._key}: {self._hub.data[self._key]}")
         self.async_write_ha_state()  # is this needed ?

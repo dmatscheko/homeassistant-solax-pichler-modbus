@@ -94,15 +94,20 @@ class SolaXModbusSelect(SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Change the select option."""
-        payload = self.entity_description.reverse_option_dict.get(option, None)
-        if self._write_method == WRITE_MULTISINGLE_MODBUS:
-            _LOGGER.info(f"writing {self._platform_name} select register {self._register} value {payload}")
-            await self._hub.async_write_registers_single(unit=self._modbus_addr, address=self._register, payload=payload)
-        elif self._write_method == WRITE_SINGLE_MODBUS:
-            _LOGGER.info(f"writing {self._platform_name} select register {self._register} value {payload}")
-            await self._hub.async_write_register(unit=self._modbus_addr, address=self._register, payload=payload)
-        elif self._write_method == WRITE_DATA_LOCAL:
-            _LOGGER.info(f"*** local data written {self._key}: {payload}")
-            self._hub.localsUpdated = True # mark to save permanently
+        if option not in self._attr_options:
+            _LOGGER.error("Invalid option: %s", option)
+            return
+
         self._hub.data[self._key] = option
+        payload = self.entity_description.reverse_option_dict.get(option, None)
+        if payload is not None:
+            if self._write_method == WRITE_MULTISINGLE_MODBUS:
+                _LOGGER.info(f"writing {self._platform_name} select register {self._register} value {payload}")
+                await self._hub.async_write_registers_single(unit=self._modbus_addr, address=self._register, payload=payload)
+            elif self._write_method == WRITE_SINGLE_MODBUS:
+                _LOGGER.info(f"writing {self._platform_name} select register {self._register} value {payload}")
+                await self._hub.async_write_register(unit=self._modbus_addr, address=self._register, payload=payload)
+            elif self._write_method == WRITE_DATA_LOCAL:
+                _LOGGER.info(f"*** local data written {self._key}: {payload}")
+                self._hub.localsUpdated = True # mark to save permanently
         self.async_write_ha_state()

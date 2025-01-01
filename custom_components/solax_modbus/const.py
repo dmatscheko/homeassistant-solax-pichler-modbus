@@ -47,9 +47,9 @@ except ImportError:
 
 # ================================= Definitions for config_flow ==========================================================
 
-DOMAIN = "solax_modbus"
+DOMAIN = "pichler_modbus"
 INVERTER_IDENT = "inverter"
-DEFAULT_NAME = "SolaX"
+DEFAULT_NAME = "Pichler"
 DEFAULT_INVERTER_NAME_SUFFIX = "Inverter"
 DEFAULT_SCAN_INTERVAL = 15
 DEFAULT_PORT = 502
