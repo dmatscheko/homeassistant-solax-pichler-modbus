@@ -134,7 +134,7 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
 
 def _load_plugin(plugin_name: str) -> ModuleType:
     _LOGGER.info("trying to load plugin - plugin_name: %s", plugin_name)
-    plugin = importlib.import_module(f".plugin_{plugin_name}", "custom_components.solax_modbus")
+    plugin = importlib.import_module(f".plugin_{plugin_name}", "custom_components.pichler_modbus")
     if not plugin:
         _LOGGER.error("Could not import plugin with name: %s", plugin_name)
     return plugin
